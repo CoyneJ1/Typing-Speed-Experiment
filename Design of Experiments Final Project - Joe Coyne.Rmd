@@ -1,0 +1,113 @@
+---
+title: "Design of Experiments Final Project"
+author: "Joe Coyne"
+date: "`r Sys.Date()`"
+output: word_document
+---
+
+```{r setup, include=FALSE}
+library(tidyverse)
+library(emmeans)
+library(FrF2)
+library(pid)
+library(gplots)
+library(scatterplot3d)
+library(rsm)
+library(rgl)
+```
+
+```{r}
+Eyes <- c(1,1,1,1,1,1,1,1,-1,-1,-1,-1,-1,-1,-1,-1) # where 1 is contacts and -1 is glasses
+Music <- c(1,1,1,1,-1,-1,-1,-1,1,1,1,1,-1,-1,-1,-1) # where 1 is no music and -1 is music
+Day <- c(-1,-1,1,1,-1,-1,1,1,-1,-1,1,1,-1,-1,1,1) # where 1 is afternoon/evening and -1 is morning
+Time <- c(254,241,218,215,264,236,231,216,275,254,214,233,241,239,239,218)
+
+data <- data.frame(Eyes, Music, Day, Time)
+data
+```
+
+```{r}
+tapply(data$Time, data$Eyes, summary)
+```
+
+```{r}
+tapply(data$Time, data$Music, summary)
+```
+
+```{r}
+tapply(data$Time, data$Day, summary)
+```
+
+```{r}
+aliases(lm(Time~(.)^5, data=data))
+```
+
+```{r}
+ffd <- aov(Time ~ Eyes + Music + Day + Eyes*Music + Eyes*Day + Music*Day + Eyes*Music*Day, data = data)
+summary(ffd)
+```
+
+```{r}
+MEPlot(ffd,main="Main Effects Plot")
+```
+
+```{r}
+IAPlot(ffd,main="Interaction Plot")
+```
+
+```{r}
+paretoPlot(ffd,main="Pareto Plot")
+```
+
+```{r}
+qqnorm.aov(ffd, label=TRUE, main="Half-Normal Plot of the Effects")
+```
+
+```{r}
+ffd1 <- aov(Time ~ Eyes + Music + Day + Eyes:Music + Music:Day)
+summary(ffd1)
+```
+
+```{r}
+par(mfrow=c(1,2))
+plot(ffd1,1,add.smooth=FALSE)
+plot(ffd1,2)
+```
+
+```{r}
+bptest(ffd1)
+```
+
+```{r}
+shapiro.test(ffd1$residuals)
+```
+
+```{r}
+TukeyHSD(aov(Time ~ as.factor(Eyes) + as.factor(Music) + as.factor(Day) + as.factor(Eyes):as.factor(Music) + as.factor(Music):as.factor(Day)))
+```
+
+
+Main Effects Model
+```{r}
+main_fit <- aov(Time ~ as.factor(Eyes) + as.factor(Music) + as.factor(Day), data = data)
+summary(main_fit)
+```
+
+```{r}
+par(mfrow=c(1,2))
+plot(main_fit,1,add.smooth=FALSE)
+plot(main_fit,2)
+```
+
+```{r}
+bptest(main_fit)
+```
+
+```{r}
+shapiro.test(main_fit$residuals)
+```
+
+```{r}
+TukeyHSD(aov(Time ~ as.factor(Eyes) + as.factor(Music) + as.factor(Day)))
+```
+
